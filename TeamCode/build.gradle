@@ -34,8 +34,13 @@ dependencies {
     if (useOpenCV5) {
         // Loads our local OpenCV 5.0.0 JAR from our libs folder
         implementation files('libs/opencv-500.jar')
+
+        // If you are using OpenCV 5.0, exclude the duplicate OpenCV 4 packaging
+        implementation('org.openftc:easyopencv:1.7.2') {
+            exclude group: 'org.openftc', module: 'opencv-repackaged-bundled-dylibs'
+        }
     } else {
-        // Loads the standard FTC SDK repackaged OpenCV 4.10.0
-        implementation 'org.openftc:opencv-repackaged-bundled-dylibs:4.10.0-A'
+        // Loads the standard EasyOpenCV
+        implementation 'org.openftc:easyopencv:1.7.2'
     }
 }
