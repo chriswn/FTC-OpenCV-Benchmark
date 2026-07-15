@@ -6,6 +6,9 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint;
+import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +32,30 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
             Mat thresholded = new Mat();
             List<MatOfPoint> contours = new ArrayList<>();
 
+            // --- SETUP WARP PERSPECTIVE ---
+            MatOfPoint2f srcPoints = new MatOfPoint2f(
+                    new Point(100, 50),
+                    new Point(540, 50),
+                    new Point(50, 430),
+                    new Point(590, 430)
+            );
+            MatOfPoint2f dstPoints = new MatOfPoint2f(
+                    new Point(0, 0),
+                    new Point(640, 0),
+                    new Point(0, 480),
+                    new Point(640, 480)
+            );
+            Mat warpMatrix = Imgproc.getPerspectiveTransform(srcPoints, dstPoints);
+            Mat warpedFrame = new Mat();
+
             // 2. Warm up the processor (JVM optimization)
             for (int i = 0; i < 100; i++) {
                 Imgproc.cvtColor(testFrame, hsvFrame, Imgproc.COLOR_BGR2HSV);
                 Core.inRange(hsvFrame, new org.opencv.core.Scalar(0, 100, 100), new org.opencv.core.Scalar(10, 255, 255), thresholded);
+                
+                // Warps the perspective of the frame (heavily optimized in OpenCV 5.0)
+                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, new Size(640, 480));
+
                 Imgproc.findContours(thresholded, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
                 contours.clear();
             }
@@ -47,6 +70,9 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
 
                 // Color thresholding
                 Core.inRange(hsvFrame, new org.opencv.core.Scalar(0, 100, 100), new org.opencv.core.Scalar(10, 255, 255), thresholded);
+
+                // Warps the perspective of the frame (heavily optimized in OpenCV 5.0)
+                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, new Size(640, 480));
 
                 // Contour tracking
                 Imgproc.findContours(thresholded, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
