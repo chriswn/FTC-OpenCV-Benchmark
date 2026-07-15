@@ -47,7 +47,7 @@ dependencies {
             exclude group: 'org.openftc', module: 'opencv-repackaged'
         }
     } else {
-        // Loads the standard EasyOpenCV setup
-        implementation 'org.openftc:easyopencv:1.7.2'
+        // Loads the standard FTC SDK repackaged OpenCV 4.10.0
+        implementation 'org.openftc:opencv-repackaged-bundled-dylibs:4.10.0-A'
     }
 }
