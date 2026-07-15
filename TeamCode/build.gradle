@@ -32,10 +32,22 @@ dependencies {
     def useOpenCV5 = true
 
     if (useOpenCV5) {
-        // Loads our local OpenCV 5.0.0 JAR from our libs folder
+        // 1. Loads our local OpenCV 5.0.0 JAR from our libs folder
         implementation files('libs/opencv-500.jar')
+
+        // 2. Load EasyOpenCV but exclude BOTH possible repackaged modules
+        implementation('org.openftc:easyopencv:1.7.2') {
+            exclude group: 'org.openftc', module: 'opencv-repackaged'
+            exclude group: 'org.openftc', module: 'opencv-repackaged-bundled-dylibs'
+        }
+
+        // 3. GLOBAL EXCLUSION: Forces Gradle to completely ignore OpenCV 4 classes
+        configurations.configureEach {
+            exclude group: 'org.openftc', module: 'opencv-repackaged-bundled-dylibs'
+            exclude group: 'org.openftc', module: 'opencv-repackaged'
+        }
     } else {
-        // Loads the standard FTC SDK repackaged OpenCV 4.10.0
-        implementation 'org.openftc:opencv-repackaged-bundled-dylibs:4.10.0-A'
+        // Loads the standard EasyOpenCV setup
+        implementation 'org.openftc:easyopencv:1.7.2'
     }
 }
