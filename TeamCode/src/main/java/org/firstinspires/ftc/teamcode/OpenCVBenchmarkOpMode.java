@@ -45,18 +45,24 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
                     new Point(0, 480),
                     new Point(640, 480)
             );
-            Mat warpMatrix = Imgproc.getPerspectiveTransform(srcPoints, dstPoints);
+
+            // Cast explicitly to base Mat class to satisfy strict JNI compilers
+            Mat warpMatrix = Imgproc.getPerspectiveTransform((Mat) srcPoints, (Mat) dstPoints);
             Mat warpedFrame = new Mat();
+
+            // Native memory allocation optimized: define size once!
+            Size targetSize = new Size(640, 480);
+            Mat contourHierarchy = new Mat();
 
             // 2. Warm up the processor (JVM optimization)
             for (int i = 0; i < 100; i++) {
                 Imgproc.cvtColor(testFrame, hsvFrame, Imgproc.COLOR_BGR2HSV);
                 Core.inRange(hsvFrame, new org.opencv.core.Scalar(0, 100, 100), new org.opencv.core.Scalar(10, 255, 255), thresholded);
-                
-                // Warps the perspective of the frame (heavily optimized in OpenCV 5.0)
-                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, new Size(640, 480));
 
-                Imgproc.findContours(thresholded, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+                // Warps the perspective of the frame
+                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, targetSize);
+
+                Imgproc.findContours(thresholded, contours, contourHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
                 contours.clear();
             }
 
@@ -71,11 +77,11 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
                 // Color thresholding
                 Core.inRange(hsvFrame, new org.opencv.core.Scalar(0, 100, 100), new org.opencv.core.Scalar(10, 255, 255), thresholded);
 
-                // Warps the perspective of the frame (heavily optimized in OpenCV 5.0)
-                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, new Size(640, 480));
+                // Warps the perspective of the frame
+                Imgproc.warpPerspective(testFrame, warpedFrame, warpMatrix, targetSize);
 
                 // Contour tracking
-                Imgproc.findContours(thresholded, contours, new Mat(), Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
+                Imgproc.findContours(thresholded, contours, contourHierarchy, Imgproc.RETR_EXTERNAL, Imgproc.CHAIN_APPROX_SIMPLE);
 
                 contours.clear();
             }
@@ -83,6 +89,16 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
             long endTime = System.nanoTime();
             double totalMs = (endTime - startTime) / 1000000.0;
             double averageMs = totalMs / iterations;
+
+            // Free native memory buffers explicitly when done
+            testFrame.release();
+            hsvFrame.release();
+            thresholded.release();
+            warpedFrame.release();
+            warpMatrix.release();
+            contourHierarchy.release();
+            srcPoints.release();
+            dstPoints.release();
 
             // 4. Output results to driver station
             while (opModeIsActive()) {
