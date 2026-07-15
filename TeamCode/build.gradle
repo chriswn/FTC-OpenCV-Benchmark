@@ -29,7 +29,7 @@ dependencies {
     // --- OPENCV VERSION TOGGLE SWITCH ---
     // Change this to true to test OpenCV 5.0.0!
     // Set to false to revert back to standard FTC OpenCV 4.x
-    def useOpenCV5 = true
+    def useOpenCV5 = false
 
     if (useOpenCV5) {
         // Loads our local OpenCV 5.0.0 JAR from our libs folder
