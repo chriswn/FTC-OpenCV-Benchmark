@@ -21,10 +21,15 @@ android {
     packagingOptions {
         jniLibs.useLegacyPackaging true
     }
+
+    compileOptions {
+        coreLibraryDesugaringEnabled true
+    }
 }
 
 dependencies {
     implementation project(':FtcRobotController')
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.5'
 
     // --- OPENCV VERSION TOGGLE SWITCH ---
     // Change this to true to test OpenCV 5.0.0!
