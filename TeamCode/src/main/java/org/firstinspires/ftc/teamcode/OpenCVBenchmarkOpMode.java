@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import org.opencv.android.OpenCVLoader;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
@@ -18,6 +19,11 @@ import java.util.List;
 public class OpenCVBenchmarkOpMode extends LinearOpMode {
     @Override
     public void runOpMode() {
+        if (!OpenCVLoader.initDebug()) {
+            telemetry.addLine("Error: OpenCV 5 native library not loaded.");
+            telemetry.update();
+        }
+
         telemetry.addData("Status", "Ready. Press Play to start benchmark.");
         telemetry.update();
 
