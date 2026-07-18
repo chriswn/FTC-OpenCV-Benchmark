@@ -37,8 +37,8 @@ dependencies {
     def useOpenCV5 = true
 
     if (useOpenCV5) {
-        // 1. Loads our local OpenCV 5.0.0 JAR from our libs folder
-        implementation files('libs/opencv-500.jar')
+        // 1. Loads our local OpenCV 5.0.0 module
+        implementation project(':opencv')
 
         // 2. Load EasyOpenCV but exclude BOTH possible repackaged modules
         implementation('org.openftc:easyopencv:1.7.2') {
