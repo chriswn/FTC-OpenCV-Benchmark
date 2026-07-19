@@ -64,6 +64,7 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
 
             // 2. Warm up the processor (JVM optimization)
             for (int i = 0; i < 100; i++) {
+                if (!opModeIsActive()) break;
                 Imgproc.cvtColor(testFrame, hsvFrame, Imgproc.COLOR_BGR2HSV);
                 Core.inRange(hsvFrame, new org.opencv.core.Scalar(0, 100, 100), new org.opencv.core.Scalar(10, 255, 255), thresholded);
 
@@ -79,6 +80,7 @@ public class OpenCVBenchmarkOpMode extends LinearOpMode {
             long startTime = System.nanoTime();
 
             for (int i = 0; i < iterations; i++) {
+                if (!opModeIsActive()) break;
                 // Color conversion
                 Imgproc.cvtColor(testFrame, hsvFrame, Imgproc.COLOR_BGR2HSV);
 

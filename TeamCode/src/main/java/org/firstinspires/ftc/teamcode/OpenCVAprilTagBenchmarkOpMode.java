@@ -19,22 +19,30 @@ import java.util.List;
 public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
     @Override
     public void runOpMode() {
-        if (!OpenCVLoader.initDebug()) {
-            telemetry.addLine("Error: OpenCV 5 native library not loaded.");
+        // Declare objects at the top scope so they can be cleaned up in the finally block
+        Mat testFrame = null;
+        Mat ids = null;
+        ArucoDetector detector = null;
+        Dictionary dictionary = null;
+
+        try {
+            if (!OpenCVLoader.initDebug()) {
+                telemetry.addLine("Error: OpenCV 5 native library not loaded.");
+                telemetry.update();
+            }
+
+            telemetry.addData("Status", "Ready. Press Play to start OpenCV 5 AprilTag benchmark.");
             telemetry.update();
-        }
 
-        telemetry.addData("Status", "Ready. Press Play to start OpenCV 5 AprilTag benchmark.");
-        telemetry.update();
+            waitForStart();
 
-        waitForStart();
+            if (!opModeIsActive()) return;
 
-        if (opModeIsActive()) {
             telemetry.addData("Status", "Initializing OpenCV 5 AprilTag Detector...");
             telemetry.update();
 
             // 1. Create a mock 640x480 frame in memory
-            Mat testFrame = new Mat(480, 640, CvType.CV_8UC1, new Scalar(127));
+            testFrame = new Mat(480, 640, CvType.CV_8UC1, new Scalar(127));
 
             // Draw a fake black-and-white square (simulating a basic AprilTag grid)
             Imgproc.rectangle(testFrame, new Point(220, 140), new Point(420, 340), new Scalar(0), -1);
@@ -42,15 +50,15 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             Imgproc.rectangle(testFrame, new Point(300, 220), new Point(340, 260), new Scalar(0), -1);
 
             // 2. Initialize the AprilTag Detector using OpenCV 5's native ArucoDetector
-            // Modern OpenCV (4.7.0+) handles AprilTags through the objdetect/aruco module.
-            Dictionary dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
-            ArucoDetector detector = new ArucoDetector(dictionary);
+            dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
+            detector = new ArucoDetector(dictionary);
 
             List<Mat> corners = new ArrayList<>();
-            Mat ids = new Mat();
+            ids = new Mat();
 
             // 3. Warm up loop
             for (int i = 0; i < 20; i++) {
+                if (!opModeIsActive()) break; // Break instantly if Stop is pressed
                 detector.detectMarkers(testFrame, corners, ids);
                 corners.clear();
             }
@@ -61,33 +69,35 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             telemetry.update();
 
             long startTime = System.nanoTime();
+            int actualIterations = 0;
             for (int i = 0; i < iterations; i++) {
+                if (!opModeIsActive()) break; // Break instantly if Stop is pressed
                 detector.detectMarkers(testFrame, corners, ids);
                 corners.clear();
+                actualIterations++;
             }
             long endTime = System.nanoTime();
 
-            // Calculate benchmark stats
-            double totalMs = (endTime - startTime) / 1000000.0;
-            double averageMs = totalMs / iterations;
+            if (actualIterations > 0) {
+                // Calculate benchmark stats
+                double totalMs = (endTime - startTime) / 1000000.0;
+                double averageMs = totalMs / actualIterations;
 
-            // Free resources
-            testFrame.release();
-            ids.release();
-
-            // 5. Output results
-            while (opModeIsActive()) {
-                telemetry.addData("Status", "OpenCV 5 AprilTag Benchmark Complete!");
-                telemetry.addData("Method", "Native ArucoDetector (DICT_APRILTAG_36h11)");
-                telemetry.addData("Total Time (200 tags)", "%.2f ms", totalMs);
-                telemetry.addData("Average Decode Latency", "%.4f ms", averageMs);
-                telemetry.addData("Est. AprilTag FPS Limit", "%.1f FPS", 1000.0 / averageMs);
-                telemetry.update();
-                idle();
+                // 5. Output results
+                while (opModeIsActive()) {
+                    telemetry.addData("Status", "OpenCV 5 AprilTag Benchmark Complete!");
+                    telemetry.addData("Method", "Native ArucoDetector (DICT_APRILTAG_36h11)");
+                    telemetry.addData("Total Time", "%.2f ms for %d decodes", totalMs, actualIterations);
+                    telemetry.addData("Average Decode Latency", "%.4f ms", averageMs);
+                    telemetry.addData("Est. AprilTag FPS Limit", "%.1f FPS", 1000.0 / averageMs);
+                    telemetry.update();
+                    idle();
+                }
             }
 
-            // --- ADD NATIVE MEMORY TRUNCATION HERE ---
-            // Explicitly release Mats
+        } finally {
+            // --- THE CRITICAL NATIVE CLEANUP GUARD ---
+            // This runs no matter how the OpMode stops or crashes!
             if (ids != null) {
                 ids.release();
             }
@@ -99,7 +109,9 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             // while trying to clean up native pointers on Android 7.
             detector = null;
             dictionary = null;
-            // ------------------------------------------
+
+            telemetry.addData("Status", "Native Memory Cleaned Up Safely.");
+            telemetry.update();
         }
     }
 }
