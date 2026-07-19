@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.core.Core; // --- 1. IMPORT THE CORE UTILITY UNIT ---
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.Point;
@@ -31,6 +32,12 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             if (!OpenCVLoader.initDebug()) {
                 telemetry.addLine("Error: OpenCV 5 native library not loaded.");
                 telemetry.update();
+            } else {
+                // --- 2. FORCE INTEL TBB INTO SINGLE-THREADED MODE ---
+                // This restricts the native C++ framework pool from spawning background workers,
+                // forcing execution strictly onto the OpMode calling thread to bypass deadlocks.
+                Core.setNumThreads(1);
+                telemetry.addLine("OpenCV 5 Core threading restricted to 1.");
             }
 
             telemetry.addData("Status", "Ready. Press Play to start OpenCV 5 AprilTag benchmark.");
@@ -53,18 +60,10 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
 
             // 2. Initialize the AprilTag Detector using OpenCV 5's native ArucoDetector
             dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
-            
-
             detectorParams = new DetectorParameters(); 
             
-            // Explicitly call the JNI setter configurations to initialize thresholds.
-            // This prevents uninitialized native parameters from causing infinite/deadlocked threading loops.
-            detectorParams.set_adaptiveThreshWinSizeMin(3);
-            detectorParams.set_adaptiveThreshWinSizeMax(23);
-            detectorParams.set_adaptiveThreshWinSizeStep(10);
-            
+            // Revert parameters back to defaults to let KleidiCV work cleanly
             detector = new ArucoDetector(dictionary, detectorParams);
-
 
             List<Mat> corners = new ArrayList<>();
             ids = new Mat();
