@@ -30,7 +30,7 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
     private static final int NUM_THREADS = 3; // try 1, 2, 3 -- Control Hub has 4 cores total
 
     // "Heavy" (OpenCV defaults) vs "stripped" detector params, independent of thread count.
-    private static final boolean USE_STRIPPED_DETECTOR_PARAMS = false;
+    private static final boolean USE_STRIPPED_DETECTOR_PARAMS = true;
     private static final int ADAPTIVE_WIN_MIN = 3;
     private static final int ADAPTIVE_WIN_MAX = 3;   // default max is 23; stripped = same as min (1 pass)
     private static final int ADAPTIVE_WIN_STEP = 1;  // default step is 10
