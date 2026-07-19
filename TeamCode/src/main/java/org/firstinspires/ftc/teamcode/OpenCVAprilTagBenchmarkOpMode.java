@@ -24,6 +24,17 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
     // Set true only if you want to re-test the "high contrast" synthetic tag instead of a blank frame
     private static final boolean USE_SYNTHETIC_TAG_PATTERN = true;
 
+    // --- TUNABLE TEST VARIABLES ---
+    // Change ONE of these at a time between test runs so you can tell which one actually
+    // moved the numbers, instead of changing several things at once.
+    private static final int NUM_THREADS = 3; // try 1, 2, 3 -- Control Hub has 4 cores total
+
+    // "Heavy" (OpenCV defaults) vs "stripped" detector params, independent of thread count.
+    private static final boolean USE_STRIPPED_DETECTOR_PARAMS = false;
+    private static final int ADAPTIVE_WIN_MIN = 3;
+    private static final int ADAPTIVE_WIN_MAX = 3;   // default max is 23; stripped = same as min (1 pass)
+    private static final int ADAPTIVE_WIN_STEP = 1;  // default step is 10
+
     @Override
     public void runOpMode() {
         // Declare objects at top scope so they can always be cleaned up in finally
@@ -45,8 +56,8 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
                 return; // no point continuing without the native lib
             } else {
                 // Force TBB into single-threaded mode to bypass native scheduler deadlocks
-                Core.setNumThreads(2);
-                telemetry.addLine("OpenCV 5 Core threading restricted to 1.");
+                Core.setNumThreads(NUM_THREADS);
+                telemetry.addLine("OpenCV 5 Core threads set to " + NUM_THREADS);
             }
 
             telemetry.addData("Status", "Ready. Press Play to start OpenCV 5 AprilTag benchmark.");
@@ -72,6 +83,18 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             // 2. Initialize the AprilTag Detector using OpenCV 5's native ArucoDetector
             dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
             detectorParams = new DetectorParameters();
+
+            if (USE_STRIPPED_DETECTOR_PARAMS) {
+                detectorParams.set_adaptiveThreshWinSizeMin(ADAPTIVE_WIN_MIN);
+                detectorParams.set_adaptiveThreshWinSizeMax(ADAPTIVE_WIN_MAX);
+                detectorParams.set_adaptiveThreshWinSizeStep(ADAPTIVE_WIN_STEP);
+                detectorParams.set_cornerRefinementMethod(Objdetect.CORNER_REFINE_NONE);
+                telemetry.addLine("Using STRIPPED detector params (single window pass, no corner refinement)");
+            } else {
+                telemetry.addLine("Using DEFAULT detector params");
+            }
+            telemetry.update();
+
             detector = new ArucoDetector(dictionary, detectorParams);
 
             ids = new Mat();
@@ -101,9 +124,14 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
                 releaseAndClear(corners);
                 actualIterations++;
 
-                // Heartbeat so a stall shows exactly where it happened, instead of nothing at all
-                if (i % 20 == 0) {
+                // Heartbeat + LIVE running average, so even a cut-off run gives real measured numbers
+                if (i % 20 == 0 && actualIterations > 0) {
+                    double elapsedMsSoFar = (System.nanoTime() - startTime) / 1_000_000.0;
+                    double avgMsSoFar = elapsedMsSoFar / actualIterations;
                     telemetry.addData("Progress", "%d / %d", i, iterations);
+                    telemetry.addData("Elapsed", "%.0f ms", elapsedMsSoFar);
+                    telemetry.addData("Running Avg Latency", "%.2f ms", avgMsSoFar);
+                    telemetry.addData("Running Est. FPS", "%.1f", 1000.0 / avgMsSoFar);
                     telemetry.update();
                 }
             }
