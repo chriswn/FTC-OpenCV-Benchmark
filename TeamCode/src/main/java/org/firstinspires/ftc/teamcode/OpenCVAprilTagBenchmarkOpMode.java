@@ -85,6 +85,21 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
                 telemetry.update();
                 idle();
             }
+
+            // --- ADD NATIVE MEMORY TRUNCATION HERE ---
+            // Explicitly release Mats
+            if (ids != null) {
+                ids.release();
+            }
+            if (testFrame != null) {
+                testFrame.release();
+            }
+
+            // Null out large native-backed objects to prevent the GC from hanging
+            // while trying to clean up native pointers on Android 7.
+            detector = null;
+            dictionary = null;
+            // ------------------------------------------
         }
     }
 }
