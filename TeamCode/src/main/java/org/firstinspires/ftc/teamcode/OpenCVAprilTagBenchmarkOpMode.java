@@ -9,7 +9,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.ArucoDetector;
-import org.opencv.objdetect.DetectorParameters; // 1. ADDED THIS IMPORT
+import org.opencv.objdetect.DetectorParameters; 
 import org.opencv.objdetect.Dictionary;
 import org.opencv.objdetect.Objdetect;
 
@@ -25,7 +25,7 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
         Mat ids = null;
         ArucoDetector detector = null;
         Dictionary dictionary = null;
-        DetectorParameters detectorParams = null; // Declare parameters reference
+        DetectorParameters detectorParams = null; 
 
         try {
             if (!OpenCVLoader.initDebug()) {
@@ -54,16 +54,24 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             // 2. Initialize the AprilTag Detector using OpenCV 5's native ArucoDetector
             dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
             
-            // 2b. MODIFIED HERE: Instantiate default parameters required for the OpenCV 5 constructor
+
             detectorParams = new DetectorParameters(); 
+            
+            // Explicitly call the JNI setter configurations to initialize thresholds.
+            // This prevents uninitialized native parameters from causing infinite/deadlocked threading loops.
+            detectorParams.set_adaptiveThreshWinSizeMin(3);
+            detectorParams.set_adaptiveThreshWinSizeMax(23);
+            detectorParams.set_adaptiveThreshWinSizeStep(10);
+            
             detector = new ArucoDetector(dictionary, detectorParams);
+
 
             List<Mat> corners = new ArrayList<>();
             ids = new Mat();
 
             // 3. Warm up loop
             for (int i = 0; i < 20; i++) {
-                if (!opModeIsActive()) break; // Break instantly if Stop is pressed
+                if (!opModeIsActive()) break; 
                 detector.detectMarkers(testFrame, corners, ids);
                 corners.clear();
             }
@@ -76,7 +84,7 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             long startTime = System.nanoTime();
             int actualIterations = 0;
             for (int i = 0; i < iterations; i++) {
-                if (!opModeIsActive()) break; // Break instantly if Stop is pressed
+                if (!opModeIsActive()) break; 
                 detector.detectMarkers(testFrame, corners, ids);
                 corners.clear();
                 actualIterations++;
@@ -109,10 +117,9 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
                 testFrame.release();
             }
 
-            // Null out large native-backed objects to prevent the GC from hanging
             detector = null;
             dictionary = null;
-            detectorParams = null; // Clean up the parameters pointer reference
+            detectorParams = null; 
 
             telemetry.addData("Status", "Native Memory Cleaned Up Safely.");
             telemetry.update();
