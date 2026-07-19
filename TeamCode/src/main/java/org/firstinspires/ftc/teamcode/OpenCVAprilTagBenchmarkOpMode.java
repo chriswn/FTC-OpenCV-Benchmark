@@ -9,6 +9,7 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.ArucoDetector;
+import org.opencv.objdetect.DetectorParameters; // 1. ADDED THIS IMPORT
 import org.opencv.objdetect.Dictionary;
 import org.opencv.objdetect.Objdetect;
 
@@ -24,6 +25,7 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
         Mat ids = null;
         ArucoDetector detector = null;
         Dictionary dictionary = null;
+        DetectorParameters detectorParams = null; // Declare parameters reference
 
         try {
             if (!OpenCVLoader.initDebug()) {
@@ -51,7 +53,10 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
 
             // 2. Initialize the AprilTag Detector using OpenCV 5's native ArucoDetector
             dictionary = Objdetect.getPredefinedDictionary(Objdetect.DICT_APRILTAG_36h11);
-            detector = new ArucoDetector(dictionary);
+            
+            // 2b. MODIFIED HERE: Instantiate default parameters required for the OpenCV 5 constructor
+            detectorParams = new DetectorParameters(); 
+            detector = new ArucoDetector(dictionary, detectorParams);
 
             List<Mat> corners = new ArrayList<>();
             ids = new Mat();
@@ -97,7 +102,6 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
 
         } finally {
             // --- THE CRITICAL NATIVE CLEANUP GUARD ---
-            // This runs no matter how the OpMode stops or crashes!
             if (ids != null) {
                 ids.release();
             }
@@ -106,9 +110,9 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
             }
 
             // Null out large native-backed objects to prevent the GC from hanging
-            // while trying to clean up native pointers on Android 7.
             detector = null;
             dictionary = null;
+            detectorParams = null; // Clean up the parameters pointer reference
 
             telemetry.addData("Status", "Native Memory Cleaned Up Safely.");
             telemetry.update();
