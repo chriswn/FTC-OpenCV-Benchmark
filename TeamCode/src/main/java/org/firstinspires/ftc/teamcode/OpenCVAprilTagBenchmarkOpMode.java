@@ -45,7 +45,7 @@ public class OpenCVAprilTagBenchmarkOpMode extends LinearOpMode {
                 return; // no point continuing without the native lib
             } else {
                 // Force TBB into single-threaded mode to bypass native scheduler deadlocks
-                Core.setNumThreads(1);
+                Core.setNumThreads(2);
                 telemetry.addLine("OpenCV 5 Core threading restricted to 1.");
             }
 
